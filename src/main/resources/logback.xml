@@ -1,0 +1,14 @@
+<configuration>
+    <turboFilter class="net.olympiccode.vhackos.bot.core.log.LogFilter">
+    </turboFilter>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%d{HH:mm:ss} %level [%logger{50}] %msg%n</pattern>
+        </layout>
+        </encoder>
+    </appender>
+    <root level="info">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

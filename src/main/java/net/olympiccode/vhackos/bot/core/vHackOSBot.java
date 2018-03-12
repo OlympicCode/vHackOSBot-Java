@@ -6,6 +6,7 @@ import net.olympiccode.vhackos.api.vHackOSAPIBuilder;
 import net.olympiccode.vhackos.bot.core.config.AdvancedConfigFile;
 import net.olympiccode.vhackos.bot.core.config.AdvancedConfigValues;
 import net.olympiccode.vhackos.bot.core.config.ConfigFile;
+import net.olympiccode.vhackos.bot.core.config.ConfigValues;
 import net.olympiccode.vhackos.bot.core.misc.MiscConfigValues;
 import net.olympiccode.vhackos.bot.core.misc.MiscService;
 import net.olympiccode.vhackos.bot.core.networking.NetworkingConfigValues;
@@ -45,19 +46,22 @@ public class vHackOSBot {
         }));
 
         advConfig.setupConfig();
-
+        config.setupConfig();
 //        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
       //  root.setLevel(Level.valueOf(AdvancedConfigValues.logLevel));
-
+        if (ConfigValues.username.equals("***") || ConfigValues.password.equals("***")) {
+            LOG.error("Please set your login data in the config file");
+            System.exit(0);
+        }
         try {
-            api = new vHackOSAPIBuilder().setUsername("Checki2").setPassword("12345678").buildBlocking();
+            api = new vHackOSAPIBuilder().setUsername(ConfigValues.username).setPassword(ConfigValues.password).buildBlocking();
         } catch (LoginException e) {
             LOG.error("vHack returned invalid username/password.");
         } catch (InterruptedException e) {
             LOG.error("There was a problem initializing the vHackOSBot.");
         }
 
-        config.setupConfig();
+
         if (UpdateConfigValues.enabled) updateService.setup();
         if (MiscConfigValues.enabled) miscService.setup();
         if (NetworkingConfigValues.enabled) networkingService.setup();

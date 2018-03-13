@@ -15,12 +15,12 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile 'net.olympiccode:vHackOSAPI-Java:dev-SNAPSHOT'
     compile group: 'org.json', name: 'json', version: '20090211'
     compile 'org.reflections:reflections:0.9.10'
     compile 'com.google.code.gson:gson:2.8.2'
     compile 'ch.qos.logback:logback-classic:1.2.3'
     compile 'com.google.guava:guava:24.0-jre'
+    compile 'net.olympiccode:vHackOSAPI-Java:v1.1-beta'
 }
 mainClassName = "net.olympiccode.vhackos.bot.core.vHackOSBot"
 shadowJar.destinationDir = file("/build/libs")

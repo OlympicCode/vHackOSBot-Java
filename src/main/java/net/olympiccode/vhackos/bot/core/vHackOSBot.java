@@ -1,10 +1,15 @@
 package net.olympiccode.vhackos.bot.core;
 
-import ch.qos.logback.classic.Level;
+import io.sentry.Sentry;
+import io.sentry.SentryClientFactory;
+import io.sentry.event.BreadcrumbBuilder;
+import io.sentry.event.Event;
+import io.sentry.event.EventBuilder;
+import io.sentry.event.UserBuilder;
 import net.olympiccode.vhackos.api.vHackOSAPI;
 import net.olympiccode.vhackos.api.vHackOSAPIBuilder;
+import net.olympiccode.vhackos.api.vHackOSInfo;
 import net.olympiccode.vhackos.bot.core.config.AdvancedConfigFile;
-import net.olympiccode.vhackos.bot.core.config.AdvancedConfigValues;
 import net.olympiccode.vhackos.bot.core.config.ConfigFile;
 import net.olympiccode.vhackos.bot.core.config.ConfigValues;
 import net.olympiccode.vhackos.bot.core.misc.MiscConfigValues;
@@ -13,7 +18,6 @@ import net.olympiccode.vhackos.bot.core.networking.NetworkingConfigValues;
 import net.olympiccode.vhackos.bot.core.networking.NetworkingService;
 import net.olympiccode.vhackos.bot.core.updating.UpdateConfigValues;
 import net.olympiccode.vhackos.bot.core.updating.UpdateService;
-import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,17 +42,35 @@ public class vHackOSBot {
     }
 
     public void run() {
-
+        Sentry.init("https://36b5e13fe253466f8b98b5adacb2aa32:cf886218c21b4ba7ad4692f303020f7a@sentry.io/303008");
+        Sentry.getContext().addExtra("version", vHackOSInfo.API_PREFIX);
+        Sentry.getContext().recordBreadcrumb(
+                new BreadcrumbBuilder().setMessage("Starting...").build()
+        );
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Shutting down...");
             config.save();
             advConfig.save();
         }));
-
-        advConfig.setupConfig();
-        config.setupConfig();
+        Sentry.getContext().recordBreadcrumb(
+                new BreadcrumbBuilder().setMessage("Configs").build()
+        );
+        try {
+            advConfig.setupConfig();
+            config.setupConfig();
+        } catch (Exception e) {
+            Sentry.capture(e);
+            e.printStackTrace();
+        }
+        Sentry.getContext().recordBreadcrumb(
+                new BreadcrumbBuilder().setMessage("Configs done").build()
+        );
 //        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
-      //  root.setLevel(Level.valueOf(AdvancedConfigValues.logLevel));
+        //  root.setLevel(Level.valueOf(AdvancedConfigValues.logLevel));
+        Sentry.getContext().recordBreadcrumb(
+                new BreadcrumbBuilder().setMessage("API setup").build()
+        );
+
         if (ConfigValues.username.equals("***") || ConfigValues.password.equals("***")) {
             LOG.error("Please set your login data in the config file");
             System.exit(0);
@@ -59,13 +81,27 @@ public class vHackOSBot {
             LOG.error("vHack returned invalid username/password.");
         } catch (InterruptedException e) {
             LOG.error("There was a problem initializing the vHackOSBot.");
+        } catch (Exception e) {
+            Sentry.capture(e);
+            e.printStackTrace();
         }
-
-
-        if (UpdateConfigValues.enabled) updateService.setup();
-        if (MiscConfigValues.enabled) miscService.setup();
-        if (NetworkingConfigValues.enabled) networkingService.setup();
-
+        Sentry.getContext().setUser(
+                new UserBuilder().setUsername(ConfigValues.username).build()
+        );
+        Sentry.getContext().recordBreadcrumb(
+                new BreadcrumbBuilder().setMessage("Service setup").build()
+        );
+        try {
+            if (UpdateConfigValues.enabled) updateService.setup();
+            if (MiscConfigValues.enabled) miscService.setup();
+            if (NetworkingConfigValues.enabled) networkingService.setup();
+        } catch (Exception e) {
+            Sentry.capture(e);
+            e.printStackTrace();
+        }
+        Sentry.getContext().recordBreadcrumb(
+                new BreadcrumbBuilder().setMessage("Done").build()
+        );
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         String line = "";
         while (true) {
@@ -84,7 +120,7 @@ public class vHackOSBot {
                                 "Level: " + api.getStats().getLevel() + getProgressBar());
                         break;
                     case "tasks":
-                        System.out.println("-------------------\n" + "Boosters: " +  api.getTaskManager().getBoosters() + "-------------------\n" + api.getTaskManager().getActiveTasks().stream().map(task -> task.getType() + ": " + task.getLevel() + " " + ((task.getEndTimestamp() - System.currentTimeMillis()) / 1000) + "sec left.").collect(Collectors.joining("\n")) + "\n-------------------");
+                        System.out.println("-------------------\n" + "Boosters: " + api.getTaskManager().getBoosters() + "-------------------\n" + api.getTaskManager().getActiveTasks().stream().map(task -> task.getType() + ": " + task.getLevel() + " " + ((task.getEndTimestamp() - System.currentTimeMillis()) / 1000) + "sec left.").collect(Collectors.joining("\n")) + "\n-------------------");
                         break;
                     case "brutes":
                         System.out.println("-------------------\n" + api.getTaskManager().getActiveBrutes().stream().map(bruteForce -> bruteForce.getUsername() + ": " + bruteForce.getState()).collect(Collectors.joining("\n")) + "\n-------------------");

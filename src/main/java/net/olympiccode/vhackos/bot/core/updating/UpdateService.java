@@ -1,5 +1,6 @@
 package net.olympiccode.vhackos.bot.core.updating;
 
+import io.sentry.Sentry;
 import net.olympiccode.vhackos.api.appstore.App;
 import net.olympiccode.vhackos.api.appstore.Task;
 import net.olympiccode.vhackos.api.entities.AppType;
@@ -23,6 +24,11 @@ ScheduledExecutorService updateService;
     public UpdateService() {
         LOG.info("Creating UpdateService...");
        updateService = Executors.newScheduledThreadPool(1, new UpdateServiceFactory());
+    }
+
+    @Override
+    public ScheduledExecutorService getService() {
+        return updateService;
     }
 
     public void setup() {
@@ -104,7 +110,10 @@ ScheduledExecutorService updateService;
                 proccessBoosts();
             }
         } catch (Exception e) {
+            Sentry.capture(e);
             e.printStackTrace();
+            updateService.shutdownNow();
+            LOG.warn("The update service has been shutdown due to an error.");
         }
     }
 

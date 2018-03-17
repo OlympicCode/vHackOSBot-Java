@@ -2,6 +2,7 @@ package net.olympiccode.vhackos.bot.core.networking;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.sentry.Sentry;
 import net.olympiccode.vhackos.api.entities.AppType;
 import net.olympiccode.vhackos.api.entities.BruteForceState;
 import net.olympiccode.vhackos.api.entities.impl.BruteForceImpl;
@@ -25,7 +26,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 public class NetworkingService implements BotService {
-    ScheduledExecutorService networkingService;
+    public static ScheduledExecutorService networkingService;
     Logger LOG = LoggerFactory.getLogger("NetworkingService");
 
     public NetworkingService() {
@@ -40,6 +41,11 @@ public class NetworkingService implements BotService {
     }
 
 
+    @Override
+    public ScheduledExecutorService getService() {
+        return networkingService;
+    }
+
     public void setup() {
         LOG.info("Setting up NetworkingSerice...");
         networkingService.scheduleAtFixedRate(() -> runService(), 0, 60000, TimeUnit.MILLISECONDS);
@@ -53,8 +59,8 @@ public class NetworkingService implements BotService {
         try {
             ((ArrayList<BruteForce>)((ArrayList)vHackOSBot.api.getTaskManager().getActiveBrutes()).clone()).forEach(bruteForce -> {
                 if (cache.asMap().containsKey(bruteForce.getIp())) return;
-                cache.put(bruteForce.getIp(), "");
                 if (bruteForce.getState() == BruteForceState.SUCCESS) {
+                    cache.put(bruteForce.getIp(), "");
                     ExploitedTarget etarget = bruteForce.exploit();
                     ExploitedTarget.Banking banking = etarget.getBanking();
 
@@ -96,7 +102,10 @@ public class NetworkingService implements BotService {
                }
             }
         } catch (Exception e) {
+            Sentry.capture(e);
             e.printStackTrace();
+            networkingService.shutdownNow();
+            LOG.warn("The networking service has been shutdown due to an error.");
         }
     }
 

@@ -1,5 +1,6 @@
 package net.olympiccode.vhackos.bot.core.misc;
 
+import io.sentry.Sentry;
 import net.olympiccode.vhackos.api.entities.AppType;
 import net.olympiccode.vhackos.api.network.ExploitedTarget;
 import net.olympiccode.vhackos.bot.core.BotService;
@@ -21,6 +22,11 @@ public class MiscService implements BotService {
         miscService = Executors.newScheduledThreadPool(1, new MiscServiceFactory());
     }
 
+    @Override
+    public ScheduledExecutorService getService() {
+        return miscService;
+    }
+
     public void setup() {
         LOG.info("Setting up MiscSerice...");
         miscService.scheduleAtFixedRate(() -> runService(), 0, 60000 * 60, TimeUnit.MILLISECONDS);
@@ -40,7 +46,10 @@ public class MiscService implements BotService {
                 }
             }
         } catch (Exception e) {
+            Sentry.capture(e);
             e.printStackTrace();
+            miscService.shutdownNow();
+            LOG.warn("The misc service has been shutdown due to an error.");
         }
     }
 

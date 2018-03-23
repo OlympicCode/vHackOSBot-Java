@@ -15,4 +15,8 @@ public class NetworkingConfigValues {
 
     @ConfigOption(path = "networking.onFail", defaultValue = "retry", options = {"retry", "remove"})
     public static String onFail;
+
+    @ConfigOption(path = "networking.withdrawPorcentage", defaultValue = "100", options = {""})
+    public static int withdrawPorcentage;
+
 }

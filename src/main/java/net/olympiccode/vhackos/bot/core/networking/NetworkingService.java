@@ -66,7 +66,7 @@ public class NetworkingService implements BotService {
 
                     if (banking.isBruteForced()) {
                         long av = banking.getAvaliableMoney();
-                        if (av > 0 && banking.withdraw()) {
+                        if (av > 0 && banking.withdraw(NetworkingConfigValues.withdrawPorcentage)) {
                             LOG.info("Withdrawed " + av + " of " + banking.getTotal() + " from " + etarget.getIp() + ".");
                         } else {
                             LOG.error("Failed to withdraw from " + etarget.getIp() + ".");
@@ -88,7 +88,7 @@ public class NetworkingService implements BotService {
                     switch (NetworkingConfigValues.onFail) {
                         case "retry":
                             LOG.info("Retrying bruteforce at " + bruteForce.getIp() + " has it failed.");
-                            ((BruteForceImpl) bruteForce).retry();
+                            bruteForce.retry();
                         case "remove":
                             LOG.info("Removing bruteforce from " + bruteForce.getIp() + " has it failed.");
                             bruteForce.remove();

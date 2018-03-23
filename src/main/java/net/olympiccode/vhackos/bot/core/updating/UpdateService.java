@@ -11,12 +11,14 @@ import net.olympiccode.vhackos.bot.core.vHackOSBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.UnresolvedPermission;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class UpdateService implements BotService {
 ScheduledExecutorService updateService;
@@ -78,11 +80,15 @@ ScheduledExecutorService updateService;
     }
 
     public boolean isListed(AppType type) {
+        if (vHackOSBot.api.getStats().getLevel() < 2) {
+            LOG.info("Account level is lower than two, ignoring app listing.");
+            return true;
+        }
         switch (UpdateConfigValues.listMode) {
             case "whitelist":
                 return Arrays.asList(UpdateConfigValues.updateList).contains(type.getName()) || Arrays.asList(UpdateConfigValues.updateList).contains(type.getId());
             case "blacklist":
-                return !Arrays.asList(UpdateConfigValues.updateList).contains(type.getName()) || !Arrays.asList(UpdateConfigValues.updateList).contains(type.getId());
+                return !Arrays.stream(UpdateConfigValues.updateList).map(String::toLowerCase).collect(Collectors.toList()).contains(type.getName().toLowerCase()) && !Arrays.stream(UpdateConfigValues.updateList).map(String::toLowerCase).collect(Collectors.toList()).contains(String.valueOf(type.getId()));
         }
         return false;
     }

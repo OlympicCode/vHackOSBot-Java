@@ -3,6 +3,7 @@ package net.olympiccode.vhackos.bot.core;
 import io.sentry.Sentry;
 import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.UserBuilder;
+import net.olympiccode.vhackos.api.entities.impl.vHackOSAPIImpl;
 import net.olympiccode.vhackos.api.vHackOSAPI;
 import net.olympiccode.vhackos.api.vHackOSAPIBuilder;
 import net.olympiccode.vhackos.api.vHackOSInfo;
@@ -15,6 +16,9 @@ import net.olympiccode.vhackos.bot.core.networking.NetworkingConfigValues;
 import net.olympiccode.vhackos.bot.core.networking.NetworkingService;
 import net.olympiccode.vhackos.bot.core.updating.UpdateConfigValues;
 import net.olympiccode.vhackos.bot.core.updating.UpdateService;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,5 +187,19 @@ public class vHackOSBot {
         }
         builder.append("] " + api.getStats().getLevelPorcentage() + "%");
         return builder.toString();
+    }
+
+    public void checkForUpdates() {
+        //
+        //
+        Request request = (new Request.Builder()).url("https://api.github.com/repos/OlympicCode/vHackOSBot-Java/releases/latest").addHeader("user-agent", "Dalvik/1.6.0 (Linux; U; Android 4.4.4; SM-N935F Build/KTU84P)").addHeader("Accept-Encoding", "gzip").build();
+        try {
+            Response r = ((vHackOSAPIImpl) api).getRequester().getHttpClient().newCall(request).execute();
+            if (r.isSuccessful()) {
+                JSONObject json = new JSONObject(r.body());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

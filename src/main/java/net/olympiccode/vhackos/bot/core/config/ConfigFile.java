@@ -27,6 +27,10 @@ public class ConfigFile {
         LOG.info("Creating ConfigFile...");
     }
 
+    public JsonObject getConfigJson() {
+        return configJson;
+    }
+
     public void setupConfig() {
         LOG.info("Loading config...");
         long time = System.currentTimeMillis();

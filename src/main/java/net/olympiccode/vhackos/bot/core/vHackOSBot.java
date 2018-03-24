@@ -8,6 +8,7 @@ import net.olympiccode.vhackos.api.vHackOSAPI;
 import net.olympiccode.vhackos.api.vHackOSAPIBuilder;
 import net.olympiccode.vhackos.api.vHackOSInfo;
 import net.olympiccode.vhackos.bot.core.config.AdvancedConfigFile;
+import net.olympiccode.vhackos.bot.core.config.AdvancedConfigValues;
 import net.olympiccode.vhackos.bot.core.config.ConfigFile;
 import net.olympiccode.vhackos.bot.core.config.ConfigValues;
 import net.olympiccode.vhackos.bot.core.misc.MiscConfigValues;
@@ -95,7 +96,7 @@ public class vHackOSBot {
             LOG.error("Please set your login data in the config file");
             System.exit(0);
         }
-        api = new vHackOSAPIBuilder().setUsername(ConfigValues.username).setPassword(ConfigValues.password).buildBlocking();
+            api = new vHackOSAPIBuilder().setUsername(ConfigValues.username).setPassword(ConfigValues.password).buildBlocking();
         Sentry.getContext().setUser(
                 new UserBuilder().setUsername(ConfigValues.username).build()
         );
@@ -103,9 +104,11 @@ public class vHackOSBot {
                 new BreadcrumbBuilder().setMessage("Service setup").build()
         );
         try {
+            startTime = System.currentTimeMillis();
             if (UpdateConfigValues.enabled) updateService.setup();
             if (MiscConfigValues.enabled) miscService.setup();
             if (NetworkingConfigValues.enabled) networkingService.setup();
+
         } catch (Exception e) {
             Sentry.capture(e);
             e.printStackTrace();
@@ -127,7 +130,7 @@ public class vHackOSBot {
                         break;
                     case "stats":
                         System.out.println("Username: " + api.getStats().getUsername() + SEPARATOR + "Money: " + api.getStats().getMoney() + SEPARATOR + "Netcoins: " + api.getStats().getNetcoins() +
-                                "\n" + "Exploits: " + api.getStats().getExploits() + SEPARATOR + "IP: " + api.getStats().getIpAddress() + "\n" +
+                                "\n" + "Exploits: " + api.getStats().getExploits() + SEPARATOR + "IP: " + api.getStats().getIpAddress() + SEPARATOR + " Running for: " + getRunningTime() + "\n" +
                                 "Level: " + api.getStats().getLevel() + getProgressBar());
                         break;
                     case "tasks":
@@ -169,6 +172,13 @@ public class vHackOSBot {
     private String getTimeLeft() {
         long time = api.getLeaderboards().getTournamentEndTimestamp();
         long millis = time - System.currentTimeMillis();
+        return String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(millis),
+                TimeUnit.MILLISECONDS.toMinutes(millis) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millis)),
+                TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));
+    }
+    private long startTime = 0;
+    private String getRunningTime() {
+        long millis = System.currentTimeMillis() - startTime;
         return String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(millis),
                 TimeUnit.MILLISECONDS.toMinutes(millis) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millis)),
                 TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));

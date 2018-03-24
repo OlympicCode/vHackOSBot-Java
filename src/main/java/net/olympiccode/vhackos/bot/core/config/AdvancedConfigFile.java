@@ -26,6 +26,11 @@ public class AdvancedConfigFile {
 JsonObject configJson = new JsonObject();
     File file = new File("advanced.json");
     Logger LOG = LoggerFactory.getLogger("vHackOSBot-ConfigAdv");
+
+    public JsonObject getConfigJson() {
+        return configJson;
+    }
+
     public void setupConfig() {
         LOG.info("Loading advanced config...");
         long time = System.currentTimeMillis();

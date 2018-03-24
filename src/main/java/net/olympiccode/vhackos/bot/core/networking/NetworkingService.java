@@ -52,8 +52,8 @@ public class NetworkingService implements BotService {
     }
 
     Cache<String, String> cache = CacheBuilder.newBuilder()
-            .maximumSize(300)
-       .expireAfterWrite(30, TimeUnit.MINUTES).build();
+            .maximumSize(500)
+       .expireAfterWrite(60*5+30, TimeUnit.SECONDS).build();
 
     public void runService() {
         try {
@@ -97,9 +97,13 @@ public class NetworkingService implements BotService {
             });
             if (vHackOSBot.api.getStats().getExploits() > 0) {
                int success = 0;
-               while (success < 6) {
+               int tries = 6 * 3;
+                LOG.info("Starting exploits...");
+               while (success < 6 && tries > 0) {
                    success += scan();
+                   tries--;
                }
+               LOG.info("Finished exploits, exploited " + success + " targets in " + tries + " tries.");
             }
         } catch (Exception e) {
             Sentry.capture(e);

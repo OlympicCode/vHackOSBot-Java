@@ -96,7 +96,14 @@ public class vHackOSBot {
             LOG.error("Please set your login data in the config file");
             System.exit(0);
         }
+        if (!AdvancedConfigValues.token.equals("---") && !AdvancedConfigValues.token.equals("---")) {
+            api = new vHackOSAPIBuilder().setUsername(ConfigValues.username).setPassword(ConfigValues.password).setPreLogin(AdvancedConfigValues.token, AdvancedConfigValues.uid).buildBlocking();
+        } else {
             api = new vHackOSAPIBuilder().setUsername(ConfigValues.username).setPassword(ConfigValues.password).buildBlocking();
+        }
+          advConfig.getConfigJson().addProperty("login.accesstoken", ((vHackOSAPIImpl) api).getAccessToken());
+        advConfig.getConfigJson().addProperty("login.uid", ((vHackOSAPIImpl) api).getUid());
+        advConfig.save();
         Sentry.getContext().setUser(
                 new UserBuilder().setUsername(ConfigValues.username).build()
         );

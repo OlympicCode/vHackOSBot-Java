@@ -105,14 +105,24 @@ ScheduledExecutorService updateService;
             List<Task> activetasks = vHackOSBot.api.getTaskManager().getActiveTasks();
             if (activetasks.size() < 1) {
                 App app = getNextApp();
-                LOG.info("Starting update of " + app.getType() + " for " + app.getPrice() + ".");
+                if (app.getPrice() > vHackOSBot.api.getStats().getMoney()) LOG.warn("Could not start update: Out of money");
+                LOG.info("Starting 10 updates of " + app.getType() + " for " + app.getPrice() + ".");
                 if (app.getAsUpdateable().fillTasks()) {
                     proccessBoosts();
                 } else {
                     LOG.warn("Failed to start update of " + app.getType() + " could be out of money or there are already tasks running.");
                 }
-            } else {
+            } else if (activetasks.size() >= 10) {
                 LOG.info("There are already updates running, trying to boost them..");
+                proccessBoosts();
+            } else {
+               int missing = 10 - activetasks.size();
+                App app = getNextApp();
+                if (app.getPrice() > vHackOSBot.api.getStats().getMoney()) LOG.warn("Could not start update: Out of money");
+                LOG.info("Starting " + missing + " updates of " + app.getType() + " for " + app.getPrice() + ".");
+                if (!app.getAsUpdateable().fillTasks()) {
+                    LOG.warn("Failed to start update of " + app.getType() + " could be out of money or there are already tasks running.");
+                }
                 proccessBoosts();
             }
         } catch (Exception e) {

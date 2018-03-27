@@ -2,7 +2,6 @@ package net.olympiccode.vhackos.bot.core.misc;
 
 import io.sentry.Sentry;
 import net.olympiccode.vhackos.api.entities.AppType;
-import net.olympiccode.vhackos.api.network.ExploitedTarget;
 import net.olympiccode.vhackos.bot.core.BotService;
 import net.olympiccode.vhackos.bot.core.vHackOSBot;
 import org.slf4j.Logger;
@@ -14,6 +13,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 public class MiscService implements BotService {
+
     ScheduledExecutorService miscService;
     Logger LOG = LoggerFactory.getLogger("MiscService");
 
@@ -29,10 +29,11 @@ public class MiscService implements BotService {
 
     public void setup() {
         LOG.info("Setting up MiscSerice...");
-        miscService.scheduleAtFixedRate(() -> runService(), 0, 60000 * 60, TimeUnit.MILLISECONDS);
+        miscService.scheduleAtFixedRate(() -> runLongService(), 0, 60000 * 60, TimeUnit.MILLISECONDS);
+        miscService.scheduleAtFixedRate(() -> runService(), 0, 60000 * 5, TimeUnit.MILLISECONDS);
     }
-
-    public void runService() {
+    public static int[] history = {0, 0, 0, 0, 0, 0};
+    public void runLongService() {
         try {
             if (MiscConfigValues.enableMiner) {
                 if (vHackOSBot.api.getAppManager().getApp(AppType.NCMiner).isInstalled()) {
@@ -45,6 +46,22 @@ public class MiscService implements BotService {
                     LOG.warn("MiscService ran but miner was not installed.");
                 }
             }
+        } catch (Exception e) {
+            Sentry.capture(e);
+            e.printStackTrace();
+            miscService.shutdownNow();
+            LOG.warn("The misc service has been shutdown due to an error.");
+        }
+    }
+
+    public void runService() {
+        try {
+            history[5] = history[4];
+            history[4] = history[3];
+            history[3] = history[2];
+            history[2] = history[1];
+            history[1] = history[0];
+            history[0] = vHackOSBot.api.getLeaderboards().getTournamentRank();
         } catch (Exception e) {
             Sentry.capture(e);
             e.printStackTrace();

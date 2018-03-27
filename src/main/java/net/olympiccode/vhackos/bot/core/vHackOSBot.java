@@ -38,7 +38,7 @@ public class vHackOSBot {
     ConfigFile config = new ConfigFile();
     AdvancedConfigFile advConfig = new AdvancedConfigFile();
     BotService updateService = new UpdateService();
-    BotService miscService = new MiscService();
+    MiscService miscService = new MiscService();
     BotService networkingService = new NetworkingService();
 
     public static void main(String[] args) {
@@ -141,7 +141,7 @@ public class vHackOSBot {
                                 "Level: " + api.getStats().getLevel() + getProgressBar());
                         break;
                     case "tasks":
-                        System.out.println("-------------------\n" + "Boosters: " + api.getTaskManager().getBoosters() + "\n-------------------\n" + api.getTaskManager().getActiveTasks().stream().map(task -> task.getType() + ": " + task.getLevel() + " " + ((task.getEndTimestamp() - System.currentTimeMillis()) / 1000) + "sec left.").collect(Collectors.joining("\n")) + "\n-------------------");
+                        System.out.println("-------------------\n" + "Boosters: " + api.getTaskManager().getBoosters() + "\n-------------------\n" + api.getTaskManager().getActiveTasks().stream().map(task -> task.getType() + ": " + task.getLevel() + " " + getTimeLeft((task.getEndTimestamp() - System.currentTimeMillis()) ) + " left.").collect(Collectors.joining("\n")) + "\n-------------------");
                         break;
                     case "brutes":
                         System.out.println("-------------------\n" + api.getTaskManager().getActiveBrutes().stream().map(bruteForce -> bruteForce.getUsername() + ": " + bruteForce.getState()).collect(Collectors.joining("\n")) + "\n-------------------");
@@ -157,7 +157,9 @@ public class vHackOSBot {
                     case "leader":
                     case "leaders":
                     case "leaderboards":
-                        System.out.println("-------------------\n" + "Current tournament pos: " + api.getLeaderboards().getTournamentRank() + "\nTournament ends in: "  + getTimeLeft() + "\nCurrent global pos: " + api.getLeaderboards().getRank() + "\n-------------------");
+                        System.out.println("-------------------\n" + "Current tournament pos: " + api.getLeaderboards().getTournamentRank() +
+                                "\nTournament history (5, 10, 15, 30 min): " + miscService.history[0] + ", " + miscService.history[1] + ", " + miscService.history[2] + ", " + miscService.history[5] +
+                                "\nTournament ends in: "  + getTimeLeft(api.getLeaderboards().getTournamentEndTimestamp() - System.currentTimeMillis()) + "\nCurrent global pos: " + api.getLeaderboards().getRank() + "\n-------------------");
                         break;
                     case "quit":
                         System.exit(0);
@@ -176,9 +178,7 @@ public class vHackOSBot {
         return "Running.";
     }
 
-    private String getTimeLeft() {
-        long time = api.getLeaderboards().getTournamentEndTimestamp();
-        long millis = time - System.currentTimeMillis();
+    private String getTimeLeft(long millis) {
         return String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(millis),
                 TimeUnit.MILLISECONDS.toMinutes(millis) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millis)),
                 TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));

@@ -35,6 +35,9 @@ ScheduledExecutorService updateService;
 
     public void setup() {
         LOG.info("Setting up UpdateSerice...");
+        if (updateService.isTerminated() || updateService.isShutdown()) {
+            updateService = Executors.newScheduledThreadPool(1, new UpdateServiceFactory());
+        }
         updateService.scheduleAtFixedRate(()->runService(), 0, 30000, TimeUnit.MILLISECONDS);
     }
 

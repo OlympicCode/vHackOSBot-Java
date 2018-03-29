@@ -48,6 +48,9 @@ public class NetworkingService implements BotService {
 
     public void setup() {
         LOG.info("Setting up NetworkingSerice...");
+        if (networkingService.isTerminated() || networkingService.isShutdown()) {
+            networkingService = Executors.newScheduledThreadPool(1, new NetworkingServiceFactory());
+        }
         networkingService.scheduleAtFixedRate(() -> runService(), 0, 60000, TimeUnit.MILLISECONDS);
     }
 

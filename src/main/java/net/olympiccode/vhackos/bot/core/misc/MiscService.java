@@ -29,6 +29,9 @@ public class MiscService implements BotService {
 
     public void setup() {
         LOG.info("Setting up MiscSerice...");
+        if (miscService.isTerminated() || miscService.isShutdown()) {
+            miscService = Executors.newScheduledThreadPool(1, new MiscServiceFactory());
+        }
         miscService.scheduleAtFixedRate(() -> runLongService(), 0, 60000 * 60, TimeUnit.MILLISECONDS);
         miscService.scheduleAtFixedRate(() -> runService(), 0, 60000 * 5, TimeUnit.MILLISECONDS);
     }

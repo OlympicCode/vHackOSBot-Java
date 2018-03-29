@@ -11,6 +11,7 @@ import net.olympiccode.vhackos.bot.core.config.AdvancedConfigFile;
 import net.olympiccode.vhackos.bot.core.config.AdvancedConfigValues;
 import net.olympiccode.vhackos.bot.core.config.ConfigFile;
 import net.olympiccode.vhackos.bot.core.config.ConfigValues;
+import net.olympiccode.vhackos.bot.core.misc.MaintenanceService;
 import net.olympiccode.vhackos.bot.core.misc.MiscConfigValues;
 import net.olympiccode.vhackos.bot.core.misc.MiscService;
 import net.olympiccode.vhackos.bot.core.networking.NetworkingConfigValues;
@@ -19,6 +20,7 @@ import net.olympiccode.vhackos.bot.core.updating.UpdateConfigValues;
 import net.olympiccode.vhackos.bot.core.updating.UpdateService;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,10 +39,10 @@ public class vHackOSBot {
     static Logger LOG = LoggerFactory.getLogger("vHackOSBot");
     ConfigFile config = new ConfigFile();
     AdvancedConfigFile advConfig = new AdvancedConfigFile();
-    BotService updateService = new UpdateService();
-    MiscService miscService = new MiscService();
-    BotService networkingService = new NetworkingService();
-
+    public static BotService updateService = new UpdateService();
+    public static MiscService miscService = new MiscService();
+    public static BotService networkingService = new NetworkingService();
+    public static BotService maintenanceService = new MaintenanceService();
     public static void main(String[] args) {
         try {
             new vHackOSBot().run();
@@ -49,7 +51,7 @@ public class vHackOSBot {
         } catch (InterruptedException e) {
             LOG.error("There was a problem initializing the vHackOSBot.");
         } catch (RuntimeException e) {
-            if (e.getMessage().contains("vhack account has been banned")) {
+            if (e.getMessage() != null && e.getMessage().contains("vhack account has been banned")) {
                 LOG.error("Your vhack account has been banned.");
                 System.exit(0);
             } else {
@@ -101,6 +103,7 @@ public class vHackOSBot {
         } else {
             api = new vHackOSAPIBuilder().setUsername(ConfigValues.username).setPassword(ConfigValues.password).buildBlocking();
         }
+        checkForUpdates();
           advConfig.getConfigJson().addProperty("login.accesstoken", ((vHackOSAPIImpl) api).getAccessToken());
         advConfig.getConfigJson().addProperty("login.uid", ((vHackOSAPIImpl) api).getUid());
         advConfig.save();
@@ -115,7 +118,8 @@ public class vHackOSBot {
             if (UpdateConfigValues.enabled) updateService.setup();
             if (MiscConfigValues.enabled) miscService.setup();
             if (NetworkingConfigValues.enabled) networkingService.setup();
-
+            maintenanceService.setup();
+            networkingService.getService().shutdownNow();
         } catch (Exception e) {
             Sentry.capture(e);
             e.printStackTrace();
@@ -149,7 +153,8 @@ public class vHackOSBot {
                     case "services":
                         System.out.println("NetworkingService: " + getStatus(networkingService.getService()) + "\n" +
                                 "UpdateService: " + getStatus(updateService.getService()) + "\n" +
-                                "MiscService: " + getStatus(miscService.getService()));
+                                "MiscService: " + getStatus(miscService.getService()) + "\n" +
+                                 "MainService: " + getStatus(maintenanceService.getService()));
                         break;
                     case "apps":
                         System.out.println("-------------------\n" + api.getAppManager().getApps().stream().map(app -> app.getType().getName() + ": " + (app.isInstalled() ? app.getLevel() : "Not installed")).collect(Collectors.joining("\n")) + "\n-------------------");
@@ -205,17 +210,23 @@ public class vHackOSBot {
         builder.append("] " + api.getStats().getLevelPorcentage() + "%");
         return builder.toString();
     }
-
+    double curVersion = 1.8;
     public void checkForUpdates() {
-        //
-        //
-        Request request = (new Request.Builder()).url("https://api.github.com/repos/OlympicCode/vHackOSBot-Java/releases/latest").addHeader("user-agent", "Dalvik/1.6.0 (Linux; U; Android 4.4.4; SM-N935F Build/KTU84P)").addHeader("Accept-Encoding", "gzip").build();
+        Request request = (new Request.Builder()).url("https://api.github.com/repos/OlympicCode/vHackOSBot-Java/releases/latest").addHeader("user-agent", "Dalvik/1.6.0 (Linux; U; Android 4.4.4; SM-N935F Build/KTU84P)").build();
         try {
             Response r = ((vHackOSAPIImpl) api).getRequester().getHttpClient().newCall(request).execute();
             if (r.isSuccessful()) {
-                JSONObject json = new JSONObject(r.body());
+                String s = r.body().string();
+                JSONObject json = new JSONObject(s);
+                double version = json.getDouble("tag_name");
+                if (version != curVersion) {
+                    LOG.info("ATTENTION: An update is avaliable for vHackOSBot: " + version + " (Running " + curVersion + ")");
+                }
+
             }
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }

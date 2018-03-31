@@ -116,7 +116,6 @@ ScheduledExecutorService updateService;
                     LOG.warn("Failed to start update of " + app.getType() + " could be out of money or there are already tasks running.");
                 }
             } else if (activetasks.size() >= 10) {
-                LOG.info("There are already updates running, trying to boost them..");
                 proccessBoosts();
             } else {
                int missing = 10 - activetasks.size();

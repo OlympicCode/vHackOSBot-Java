@@ -43,7 +43,7 @@ public class vHackOSBot {
     static Logger LOG = LoggerFactory.getLogger("vHackOSBot");
     ConfigFile config = new ConfigFile();
     AdvancedConfigFile advConfig = new AdvancedConfigFile();
-    double curVersion = 1.9;
+    double curVersion = 1.11;
     private long startTime = 0;
 
     public static void main(String[] args) {

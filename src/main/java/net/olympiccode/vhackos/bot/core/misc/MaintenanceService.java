@@ -1,6 +1,9 @@
 package net.olympiccode.vhackos.bot.core.misc;
 
 import net.olympiccode.vhackos.bot.core.BotService;
+import net.olympiccode.vhackos.bot.core.config.ConfigValues;
+import net.olympiccode.vhackos.bot.core.networking.NetworkingConfigValues;
+import net.olympiccode.vhackos.bot.core.updating.UpdateConfigValues;
 import net.olympiccode.vhackos.bot.core.vHackOSBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,17 +37,17 @@ public class MaintenanceService implements BotService {
     int upAttempts = 0;
     @Override
     public void runService() {
-       if (vHackOSBot.miscService.miscService.isTerminated() || vHackOSBot.miscService.miscService.isTerminated() && miscAttempts < 4) {
+       if (MiscConfigValues.enabled && (vHackOSBot.miscService.miscService.isTerminated() || vHackOSBot.miscService.miscService.isTerminated()) && miscAttempts < 4) {
            miscAttempts++;
            LOG.info("Restarting MiscSerivce has it stopped due to an error (Attempt " + miscAttempts + ")");
            vHackOSBot.miscService.setup();
        }
-        if (vHackOSBot.networkingService.getService().isTerminated() || vHackOSBot.networkingService.getService().isTerminated() && netAttempts < 4) {
+        if (NetworkingConfigValues.enabled && (vHackOSBot.networkingService.getService().isTerminated() || vHackOSBot.networkingService.getService().isTerminated()) && netAttempts < 4) {
             netAttempts++;
             LOG.info("Restarting NetworkingSerivce has it stopped due to an error (Attempt " + netAttempts + ")");
             vHackOSBot.networkingService.setup();
         }
-        if (vHackOSBot.updateService.getService().isTerminated() || vHackOSBot.updateService.getService().isTerminated() && upAttempts < 4) {
+        if (UpdateConfigValues.enabled && (vHackOSBot.updateService.getService().isTerminated() || vHackOSBot.updateService.getService().isTerminated()) && upAttempts < 4) {
             upAttempts++;
             LOG.info("Restarting UpdateSerivce has it stopped due to an error (Attempt " + upAttempts + ")");
             vHackOSBot.updateService.setup();

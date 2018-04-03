@@ -5,11 +5,9 @@ import com.google.common.cache.CacheBuilder;
 import io.sentry.Sentry;
 import net.olympiccode.vhackos.api.entities.AppType;
 import net.olympiccode.vhackos.api.entities.BruteForceState;
-import net.olympiccode.vhackos.api.entities.impl.BruteForceImpl;
 import net.olympiccode.vhackos.api.exceptions.ExploitFailedException;
 import net.olympiccode.vhackos.api.network.BruteForce;
 import net.olympiccode.vhackos.api.network.ExploitedTarget;
-import net.olympiccode.vhackos.api.network.NetworkManager;
 import net.olympiccode.vhackos.bot.core.BotService;
 import net.olympiccode.vhackos.bot.core.vHackOSBot;
 import org.slf4j.Logger;
@@ -18,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.nio.channels.NetworkChannel;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,18 +25,14 @@ import java.util.concurrent.TimeUnit;
 public class NetworkingService implements BotService {
     public static ScheduledExecutorService networkingService;
     Logger LOG = LoggerFactory.getLogger("NetworkingService");
+    Cache<String, String> cache = CacheBuilder.newBuilder()
+            .maximumSize(500)
+            .expireAfterWrite(60 * 5 + 30, TimeUnit.SECONDS).build();
 
     public NetworkingService() {
         LOG.info("Creating NetworkingService...");
         networkingService = Executors.newScheduledThreadPool(1, new NetworkingServiceFactory());
     }
-
-    public class NetworkingServiceFactory implements ThreadFactory {
-        public Thread newThread(Runnable r) {
-            return new Thread(r,   "vHackOSBot-NetworkingService");
-        }
-    }
-
 
     @Override
     public ScheduledExecutorService getService() {
@@ -54,13 +47,9 @@ public class NetworkingService implements BotService {
         networkingService.scheduleAtFixedRate(() -> runService(), 0, 60000, TimeUnit.MILLISECONDS);
     }
 
-    Cache<String, String> cache = CacheBuilder.newBuilder()
-            .maximumSize(500)
-       .expireAfterWrite(60*5+30, TimeUnit.SECONDS).build();
-
     public void runService() {
         try {
-            ((ArrayList<BruteForce>)((ArrayList)vHackOSBot.api.getTaskManager().getActiveBrutes()).clone()).forEach(bruteForce -> {
+            ((ArrayList<BruteForce>) ((ArrayList) vHackOSBot.api.getTaskManager().getActiveBrutes()).clone()).forEach(bruteForce -> {
                 if (cache.asMap().containsKey(bruteForce.getIp())) return;
                 if (bruteForce.getState() == BruteForceState.SUCCESS) {
                     cache.put(bruteForce.getIp(), "");
@@ -68,17 +57,18 @@ public class NetworkingService implements BotService {
                     ExploitedTarget.Banking banking = etarget.getBanking();
 
                     if (banking.isBruteForced()) {
-                        long av = banking.getAvaliableMoney();
-                        if (av > 0 && banking.withdraw(NetworkingConfigValues.withdrawPorcentage)) {
-                            LOG.info("Withdrawed " + av + " of " + banking.getTotal() + " from " + etarget.getIp() + ".");
-                        } else {
-                            LOG.error("Failed to withdraw from " + etarget.getIp() + ".");
+                        if (banking.canAttack()) {
+                            long av = banking.getAvaliableMoney();
+                            if (av > 0 && banking.withdraw(NetworkingConfigValues.withdrawPorcentage)) {
+                                LOG.info("Withdrawed " + av + " of " + banking.getTotal() + " from " + etarget.getIp() + ".");
+                            } else {
+                                LOG.error("Failed to withdraw from " + etarget.getIp() + ".");
+                            }
+                            if (eval(etarget)) {
+                                LOG.info("Removing bruteforce from " + etarget.getIp() + ".");
+                                bruteForce.remove();
+                            }
                         }
-                        if (eval(etarget)) {
-                            LOG.info("Removing bruteforce from " + etarget.getIp() + ".");
-                            bruteForce.remove();
-                        }
-
                     } else {
                         if (banking.startBruteForce()) {
                             LOG.info("Started bruteforce at " + etarget.getIp());
@@ -99,20 +89,20 @@ public class NetworkingService implements BotService {
                 }
             });
             if (vHackOSBot.api.getStats().getExploits() > 0) {
-               int success = 0;
-               int tries = 6 * 3;
+                int success = 0;
+                int tries = 6 * 3;
                 LOG.info("Starting exploits...");
-               while (success < 6 && tries > 0) {
-                   success += scan();
-                   tries--;
-               }
-               LOG.info("Finished exploits, exploited " + success + " targets in " + tries + " tries.");
+                while (success < 6 && tries > 0) {
+                    success += scan();
+                    tries--;
+                }
+                LOG.info("Finished exploits, exploited " + success + " targets in " + tries + " tries.");
             }
         } catch (Exception e) {
             Sentry.capture(e);
+            LOG.warn("The networking service has been shutdown due to an error.");
             e.printStackTrace();
             networkingService.shutdownNow();
-            LOG.warn("The networking service has been shutdown due to an error.");
         }
     }
 
@@ -158,5 +148,11 @@ public class NetworkingService implements BotService {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public class NetworkingServiceFactory implements ThreadFactory {
+        public Thread newThread(Runnable r) {
+            return new Thread(r, "vHackOSBot-NetworkingService");
+        }
     }
 }

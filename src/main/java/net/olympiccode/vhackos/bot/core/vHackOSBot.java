@@ -43,7 +43,7 @@ public class vHackOSBot {
     static Logger LOG = LoggerFactory.getLogger("vHackOSBot");
     ConfigFile config = new ConfigFile();
     AdvancedConfigFile advConfig = new AdvancedConfigFile();
-    double curVersion = 1.11;
+    double curVersion = 1.12;
     private long startTime = 0;
 
     public static void main(String[] args) {
@@ -122,7 +122,6 @@ public class vHackOSBot {
             if (MiscConfigValues.enabled) miscService.setup();
             if (NetworkingConfigValues.enabled) networkingService.setup();
             maintenanceService.setup();
-            networkingService.getService().shutdownNow();
         } catch (Exception e) {
             Sentry.capture(e);
             e.printStackTrace();

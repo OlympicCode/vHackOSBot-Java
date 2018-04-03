@@ -7,6 +7,7 @@ import net.olympiccode.vhackos.bot.core.vHackOSBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -32,7 +33,7 @@ public class MiscService implements BotService {
         if (miscService.isTerminated() || miscService.isShutdown()) {
             miscService = Executors.newScheduledThreadPool(1, new MiscServiceFactory());
         }
-        miscService.scheduleAtFixedRate(() -> runLongService(), 0, 60000 * 60, TimeUnit.MILLISECONDS);
+        miscService.scheduleAtFixedRate(() -> runLongService(), 0, 60000 * 60 + 5000 * 60, TimeUnit.MILLISECONDS);
         miscService.scheduleAtFixedRate(() -> runService(), 0, 60000 * 5, TimeUnit.MILLISECONDS);
     }
     public static int[] history = {0, 0, 0, 0, 0, 0};

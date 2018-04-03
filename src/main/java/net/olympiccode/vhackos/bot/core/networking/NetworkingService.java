@@ -49,45 +49,47 @@ public class NetworkingService implements BotService {
 
     public void runService() {
         try {
-            ((ArrayList<BruteForce>) ((ArrayList) vHackOSBot.api.getTaskManager().getActiveBrutes()).clone()).forEach(bruteForce -> {
-                if (cache.asMap().containsKey(bruteForce.getIp())) return;
-                if (bruteForce.getState() == BruteForceState.SUCCESS) {
-                    cache.put(bruteForce.getIp(), "");
-                    ExploitedTarget etarget = bruteForce.exploit();
-                    ExploitedTarget.Banking banking = etarget.getBanking();
+            if (!(vHackOSBot.api.getStats().getMoney() == 999999999L)) {
+                ((ArrayList<BruteForce>) ((ArrayList) vHackOSBot.api.getTaskManager().getActiveBrutes()).clone()).forEach(bruteForce -> {
+                    if (cache.asMap().containsKey(bruteForce.getIp())) return;
+                    if (bruteForce.getState() == BruteForceState.SUCCESS) {
+                        cache.put(bruteForce.getIp(), "");
+                        ExploitedTarget etarget = bruteForce.exploit();
+                        ExploitedTarget.Banking banking = etarget.getBanking();
 
-                    if (banking.isBruteForced()) {
-                        if (banking.canAttack()) {
-                            long av = banking.getAvaliableMoney();
-                            if (av > 0 && banking.withdraw(NetworkingConfigValues.withdrawPorcentage)) {
-                                LOG.info("Withdrawed " + av + " of " + banking.getTotal() + " from " + etarget.getIp() + ".");
-                            } else {
-                                LOG.error("Failed to withdraw from " + etarget.getIp() + ".");
+                        if (banking.isBruteForced()) {
+                            if (banking.canAttack()) {
+                                long av = banking.getAvaliableMoney();
+                                if (av > 10000 && banking.withdraw(NetworkingConfigValues.withdrawPorcentage)) {
+                                    LOG.info("Withdrawed " + av + " of " + banking.getTotal() + " from " + etarget.getIp() + ".");
+                                } else {
+                                    LOG.error("Failed to withdraw from " + etarget.getIp() + ".");
+                                }
+                                if (eval(etarget)) {
+                                    LOG.info("Removing bruteforce from " + etarget.getIp() + ".");
+                                    bruteForce.remove();
+                                }
                             }
-                            if (eval(etarget)) {
-                                LOG.info("Removing bruteforce from " + etarget.getIp() + ".");
-                                bruteForce.remove();
-                            }
-                        }
-                    } else {
-                        if (banking.startBruteForce()) {
-                            LOG.info("Started bruteforce at " + etarget.getIp());
                         } else {
-                            LOG.error("Failed to start bruteforce at " + etarget.getIp());
+                            if (banking.startBruteForce()) {
+                                LOG.info("Started bruteforce at " + etarget.getIp());
+                            } else {
+                                LOG.error("Failed to start bruteforce at " + etarget.getIp());
+                            }
+                        }
+                        etarget.setSystemLog(NetworkingConfigValues.logMessage.replaceAll("%username%", vHackOSBot.api.getStats().getUsername()));
+                    } else if (bruteForce.getState() == BruteForceState.FAILED) {
+                        switch (NetworkingConfigValues.onFail) {
+                            case "retry":
+                                LOG.info("Retrying bruteforce at " + bruteForce.getIp() + " has it failed.");
+                                bruteForce.retry();
+                            case "remove":
+                                LOG.info("Removing bruteforce from " + bruteForce.getIp() + " has it failed.");
+                                bruteForce.remove();
                         }
                     }
-                    etarget.setSystemLog(NetworkingConfigValues.logMessage.replaceAll("%username%", vHackOSBot.api.getStats().getUsername()));
-                } else if (bruteForce.getState() == BruteForceState.FAILED) {
-                    switch (NetworkingConfigValues.onFail) {
-                        case "retry":
-                            LOG.info("Retrying bruteforce at " + bruteForce.getIp() + " has it failed.");
-                            bruteForce.retry();
-                        case "remove":
-                            LOG.info("Removing bruteforce from " + bruteForce.getIp() + " has it failed.");
-                            bruteForce.remove();
-                    }
-                }
-            });
+                });
+            }
             if (vHackOSBot.api.getStats().getExploits() > 0) {
                 int success = 0;
                 int tries = 6 * 3;

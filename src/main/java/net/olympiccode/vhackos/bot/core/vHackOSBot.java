@@ -7,15 +7,14 @@ import net.olympiccode.vhackos.api.entities.impl.vHackOSAPIImpl;
 import net.olympiccode.vhackos.api.vHackOSAPI;
 import net.olympiccode.vhackos.api.vHackOSAPIBuilder;
 import net.olympiccode.vhackos.api.vHackOSInfo;
-import net.olympiccode.vhackos.bot.core.config.AdvancedConfigFile;
-import net.olympiccode.vhackos.bot.core.config.AdvancedConfigValues;
-import net.olympiccode.vhackos.bot.core.config.ConfigFile;
-import net.olympiccode.vhackos.bot.core.config.ConfigValues;
+import net.olympiccode.vhackos.bot.core.config.*;
 import net.olympiccode.vhackos.bot.core.misc.MaintenanceService;
 import net.olympiccode.vhackos.bot.core.misc.MiscConfigValues;
 import net.olympiccode.vhackos.bot.core.misc.MiscService;
 import net.olympiccode.vhackos.bot.core.networking.NetworkingConfigValues;
 import net.olympiccode.vhackos.bot.core.networking.NetworkingService;
+import net.olympiccode.vhackos.bot.core.server.ServerConfigValues;
+import net.olympiccode.vhackos.bot.core.server.ServerService;
 import net.olympiccode.vhackos.bot.core.updating.UpdateConfigValues;
 import net.olympiccode.vhackos.bot.core.updating.UpdateService;
 import okhttp3.Request;
@@ -40,10 +39,11 @@ public class vHackOSBot {
     public static MiscService miscService = new MiscService();
     public static BotService networkingService = new NetworkingService();
     public static BotService maintenanceService = new MaintenanceService();
+    public static BotService serverService = new ServerService();
     static Logger LOG = LoggerFactory.getLogger("vHackOSBot");
     ConfigFile config = new ConfigFile();
     AdvancedConfigFile advConfig = new AdvancedConfigFile();
-    double curVersion = 1.12;
+    double curVersion = 1.13;
     private long startTime = 0;
 
     public static void main(String[] args) {
@@ -69,7 +69,7 @@ public class vHackOSBot {
 
     public void run() throws LoginException, InterruptedException {
         Sentry.init("https://36b5e13fe253466f8b98b5adacb2aa32:cf886218c21b4ba7ad4692f303020f7a@sentry.io/303008");
-        Sentry.getContext().addExtra("version", vHackOSInfo.API_PREFIX);
+        Sentry.getContext().addExtra("version", vHackOSInfo.API_PREFIX + "(" + curVersion + ")");
         Sentry.getContext().recordBreadcrumb(
                 new BreadcrumbBuilder().setMessage("Starting...").build()
         );
@@ -102,9 +102,9 @@ public class vHackOSBot {
             System.exit(0);
         }
         if (!AdvancedConfigValues.token.equals("---") && !AdvancedConfigValues.token.equals("---")) {
-            api = new vHackOSAPIBuilder().setUsername(ConfigValues.username).setPassword(ConfigValues.password).setPreLogin(AdvancedConfigValues.token, AdvancedConfigValues.uid).buildBlocking();
+            api = new vHackOSAPIBuilder().setSleepTime(AdvancedConfigValues.waitMin, AdvancedConfigValues.waitMax).setUsername(ConfigValues.username).setPassword(ConfigValues.password).setPreLogin(AdvancedConfigValues.token, AdvancedConfigValues.uid).buildBlocking();
         } else {
-            api = new vHackOSAPIBuilder().setUsername(ConfigValues.username).setPassword(ConfigValues.password).buildBlocking();
+            api = new vHackOSAPIBuilder().setSleepTime(AdvancedConfigValues.waitMin, AdvancedConfigValues.waitMax).setUsername(ConfigValues.username).setPassword(ConfigValues.password).buildBlocking();
         }
         checkForUpdates();
         advConfig.getConfigJson().addProperty("login.accesstoken", ((vHackOSAPIImpl) api).getAccessToken());
@@ -121,6 +121,7 @@ public class vHackOSBot {
             if (UpdateConfigValues.enabled) updateService.setup();
             if (MiscConfigValues.enabled) miscService.setup();
             if (NetworkingConfigValues.enabled) networkingService.setup();
+            if (ServerConfigValues.enabled) serverService.setup();
             maintenanceService.setup();
         } catch (Exception e) {
             Sentry.capture(e);
@@ -171,8 +172,14 @@ public class vHackOSBot {
                     case "quit":
                         System.exit(0);
                         break;
+                    case "server":
+                        api.getServer().update();
+                        System.out.print("Server: " + api.getServer().getServerStrength() + "/" + api.getServer().getServerStrengthMax() + "\n" +
+                        "Firewall: " + api.getServer().getFirewallStrength()[0] + "/" + api.getServer().getFirewallStrengthMax()[0] + " | " + api.getServer().getFirewallStrength()[1] + "/" + api.getServer().getFirewallStrengthMax()[1] + " | " + api.getServer().getFirewallStrength()[2] + "/" + api.getServer().getFirewallStrengthMax()[2] + "\n" +
+                                "Antivirus: " + api.getServer().getAntivirusStrength()[0] + "/" + api.getServer().getAntivirusStrengthMax()[0] + " | " + api.getServer().getAntivirusStrength()[1] + "/" + api.getServer().getAntivirusStrengthMax()[1] + " | " + api.getServer().getAntivirusStrength()[2] + "/" + api.getServer().getAntivirusStrengthMax()[2] + "\nPackages: " + api.getServer().getPackages());
+                        break;
                     default:
-                        System.out.println("Unkown command, use \"help\" to list all commands.");
+                        System.out.println("Unknown command, use \"help\" to list all commands.");
                 }
             } catch (IOException e) {
                 e.printStackTrace();

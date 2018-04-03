@@ -136,7 +136,7 @@ ScheduledExecutorService updateService;
     }
 
     void proccessBoosts() {
-        if (UpdateConfigValues.useBoosters && vHackOSBot.api.getTaskManager().getBoosters() > 0) {
+        if (UpdateConfigValues.useBoosters && vHackOSBot.api.getTaskManager().getBoosters() > UpdateConfigValues.minBoosters) {
             if (vHackOSBot.api.getTaskManager().boostAll()) {
                 LOG.info("Boosted the update.");
             } else {

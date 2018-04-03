@@ -19,6 +19,9 @@ public class UpdateConfigValues {
     @ConfigOption(path = "update.minNetcoins", defaultValue = "1000", options = {""})
     public static int minNetcoins;
 
+    @ConfigOption(path = "update.minBoosters", defaultValue = "0", options = {""})
+    public static int minBoosters;
+
     @ConfigOption(path = "update.prioritymode", defaultValue = "lowerfirst", options={"lowerfirst", "higherfirst", "random"})
     public static String priorityMode;
 

@@ -137,10 +137,18 @@ ScheduledExecutorService updateService;
 
     void proccessBoosts() {
         if (UpdateConfigValues.useBoosters && vHackOSBot.api.getTaskManager().getBoosters() > UpdateConfigValues.minBoosters) {
-            if (vHackOSBot.api.getTaskManager().boostAll()) {
-                LOG.info("Boosted the update.");
-            } else {
-                LOG.error("Failed to boost the update.");
+            final long[] bigger = {0L};
+            vHackOSBot.api.getTaskManager().getActiveTasks().forEach(task -> {
+                if (task.getEndTimestamp() > bigger[0]) bigger[0] = task.getEndTimestamp();
+            });
+            bigger[0] = bigger[0] - System.currentTimeMillis();
+            int mins = (int) (bigger[0] / 1000 / 60);
+            if (mins > UpdateConfigValues.boostMinimumMinutes) {
+                if (vHackOSBot.api.getTaskManager().boostAll()) {
+                    LOG.info("Boosted the update.");
+                } else {
+                    LOG.error("Failed to boost the update.");
+                }
             }
         }
         if (UpdateConfigValues.finishWithNetcoins) {

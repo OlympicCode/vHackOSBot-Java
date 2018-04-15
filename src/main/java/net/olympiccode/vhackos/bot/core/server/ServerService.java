@@ -1,6 +1,7 @@
 package net.olympiccode.vhackos.bot.core.server;
 
 import io.sentry.Sentry;
+import net.olympiccode.vhackos.api.entities.AppType;
 import net.olympiccode.vhackos.api.server.Server;
 import net.olympiccode.vhackos.bot.core.BotService;
 import net.olympiccode.vhackos.bot.core.vHackOSBot;
@@ -35,7 +36,9 @@ public class ServerService implements BotService {
         if (serverService.isTerminated() || serverService.isShutdown()) {
             serverService = Executors.newScheduledThreadPool(1, new ServerServiceFactory());
         }
-        serverService.scheduleAtFixedRate(() -> runService(), 0, 330000, TimeUnit.MILLISECONDS);
+        if (vHackOSBot.api.getAppManager().getApp(AppType.Server).isInstalled()) {
+            serverService.scheduleAtFixedRate(() -> runService(), 0, 330000, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
@@ -48,30 +51,47 @@ public class ServerService implements BotService {
                 LOG.info("Opened " + server.getPackages() + " server packages, got " + result.getServer() + " server, " + result.getAv() + " av, " + result.getFw() + " fw and " + result.getBoost() + " boosters.");
             }
             server.update();
-            while (server.getServerPieces() > 9 && (server.getServerStrength() < server.getServerStrengthMax())) {
-                LOG.info("Upgrading server's server...");
-                if (server.upgrade(Server.NODE_TYPE.SERVER, 1)) LOG.info("Upgraded server's server.");
-                else LOG.info("Failed to upgrade server's server...");
-            }
-            server.update();
-            int fwNodes = (int) Arrays.stream(server.getFirewallStrength()).filter(value -> value != 0).count();
-            for (int i = 0; i < fwNodes; i++) {
-                LOG.info("Upgrading server's firewall node " + (i + 1) + "...");
-                while (server.getFirewallPieces() > 9 && (server.getFirewallStrength()[i] < server.getFirewallStrengthMax()[i])) {
-                    if (server.upgrade(Server.NODE_TYPE.FW, i + 1))
-                        LOG.info("Upgraded server's firewall node " + (i + 1) + ".");
-                    else LOG.info("Failed to upgrade server's firewall node " + (i + 1) + ".");
+            if (ServerConfigValues.upgradeNodes) {
+                if (server.getServerPieces() > 9) {
+                    int times = 0;
+                    int cur = server.getServerStrength();
+                    LOG.info("Upgrading server's server...");
+                    while (server.getServerPieces() > 9 && (server.getServerStrength() < server.getServerStrengthMax())) {
+                        if (server.upgrade(Server.NODE_TYPE.SERVER, 1)) times++;
+                    }
+                    server.update();
+                    LOG.info("Upgraded server's server " + times + " times. (" + cur + "->" + server.getServerStrength() + ")");
                 }
-            }
 
-            server.update();
-            int avNodes = (int) Arrays.stream(server.getAntivirusStrength()).filter(value -> value != 0).count();
-            for (int i = 0; i < avNodes; i++) {
-                LOG.info("Upgrading server's antivirus node " + (i + 1) + "...");
-                while (server.getAntivirusPieces() > 9 && (server.getAntivirusStrength()[i] < server.getAntivirusStrengthMax()[i])) {
-                    if (server.upgrade(Server.NODE_TYPE.AV, i + 1))
-                        LOG.info("Upgraded server's antivirus node " + (i + 1) + ".");
-                    else LOG.info("Failed to upgrade server's antivirus node " + (i + 1) + ".");
+                server.update();
+                int fwNodes = (int) Arrays.stream(server.getFirewallStrength()).filter(value -> value != 0).count();
+                for (int i = 0; i < fwNodes; i++) {
+                    if (server.getFirewallPieces() > 9) {
+                        LOG.info("Upgrading server's firewall node " + (i + 1) + "...");
+                        int times = 0;
+                        int cur = server.getFirewallStrength()[i];
+                        while (server.getFirewallPieces() > 9 && (server.getFirewallStrength()[i] < server.getFirewallStrengthMax()[i])) {
+                            if (server.upgrade(Server.NODE_TYPE.FW, i + 1)) times++;
+                        }
+                        server.update();
+                        LOG.info("Upgraded server's firewall node " + (i + 1) + " " + times + " times. (" + cur + "->" + server.getFirewallStrength()[i] + ")");
+                    }
+                }
+
+
+                server.update();
+                int avNodes = (int) Arrays.stream(server.getAntivirusStrength()).filter(value -> value != 0).count();
+                for (int i = 0; i < avNodes; i++) {
+                    if (server.getAntivirusPieces() > 9) {
+                        LOG.info("Upgrading server's antivirus node " + (i + 1) + "...");
+                        int times = 0;
+                        int cur = server.getAntivirusStrength()[0];
+                        while (server.getAntivirusPieces() > 9 && (server.getAntivirusStrength()[i] < server.getAntivirusStrengthMax()[i])) {
+                            if (server.upgrade(Server.NODE_TYPE.AV, i + 1)) times++;
+                        }
+                        server.update();
+                        LOG.info("Upgraded server's antivirus node " + (i + 1) + " " + times + " times. (" + cur + "->" + server.getAntivirusStrength()[i] + ")");
+                    }
                 }
             }
 

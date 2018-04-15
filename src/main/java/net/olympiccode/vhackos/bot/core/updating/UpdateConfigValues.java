@@ -31,4 +31,7 @@ public class UpdateConfigValues {
     @ConfigOption(path = "update.list", defaultValue = "[]", options = {""})
     public static String[] updateList;
 
+    @ConfigOption(path = "update.boostMinimumMinutes", defaultValue = "20", options = {""})
+    public static int boostMinimumMinutes;
+
 }

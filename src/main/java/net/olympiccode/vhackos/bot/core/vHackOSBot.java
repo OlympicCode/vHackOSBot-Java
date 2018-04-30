@@ -4,6 +4,7 @@ import io.sentry.Sentry;
 import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.UserBuilder;
 import net.olympiccode.vhackos.api.entities.impl.vHackOSAPIImpl;
+import net.olympiccode.vhackos.api.server.Server;
 import net.olympiccode.vhackos.api.vHackOSAPI;
 import net.olympiccode.vhackos.api.vHackOSAPIBuilder;
 import net.olympiccode.vhackos.api.vHackOSInfo;
@@ -43,7 +44,7 @@ public class vHackOSBot {
     static Logger LOG = LoggerFactory.getLogger("vHackOSBot");
     ConfigFile config = new ConfigFile();
     AdvancedConfigFile advConfig = new AdvancedConfigFile();
-    double curVersion = 1.14;
+    double curVersion = 1.15;
     private long startTime = 0;
 
     public static void main(String[] args) {
@@ -140,7 +141,7 @@ public class vHackOSBot {
                 String[] args = line.split(" ");
                 switch (args[0]) {
                     case "help":
-                        System.out.println("stats - List all basic stats\n" + "tasks - Lists all active tasks\n" + "brutes - Lists all active bruteforces" + "\nservices - Check the services status\napps - Check app stats\nquit - Exit the bot\nleaders - Check leaderboards");
+                        System.out.println("stats - List all basic stats\n" + "tasks - Lists all active tasks\n" + "brutes - Lists all active bruteforces" + "\nservices - Check the services status\napps - Check app stats\nquit - Exit the bot\nleaders - Check leaderboards\nserver - Check server stats");
                         break;
                     case "stats":
                         System.out.println("Username: " + api.getStats().getUsername() + SEPARATOR + "Money: " + api.getStats().getMoney() + SEPARATOR + "Netcoins: " + api.getStats().getNetcoins() +
@@ -173,10 +174,10 @@ public class vHackOSBot {
                         System.exit(0);
                         break;
                     case "server":
-                        api.getServer().update();
-                        System.out.print("Server: " + api.getServer().getServerStrength() + "/" + api.getServer().getServerStrengthMax() + "\n" +
-                        "Firewall: " + api.getServer().getFirewallStrength()[0] + "/" + api.getServer().getFirewallStrengthMax()[0] + " | " + api.getServer().getFirewallStrength()[1] + "/" + api.getServer().getFirewallStrengthMax()[1] + " | " + api.getServer().getFirewallStrength()[2] + "/" + api.getServer().getFirewallStrengthMax()[2] + "\n" +
-                                "Antivirus: " + api.getServer().getAntivirusStrength()[0] + "/" + api.getServer().getAntivirusStrengthMax()[0] + " | " + api.getServer().getAntivirusStrength()[1] + "/" + api.getServer().getAntivirusStrengthMax()[1] + " | " + api.getServer().getAntivirusStrength()[2] + "/" + api.getServer().getAntivirusStrengthMax()[2] + "\nPackages: " + api.getServer().getPackages());
+                        System.out.print("Server: " + api.getServer().getNode(Server.NodeType.SERVER,0).getStrength() + "/" + api.getServer().getNode(Server.NodeType.SERVER,0).getMaxStrength() + "\n" +
+                        "Firewall: " + api.getServer().getNode(Server.NodeType.FW, 0).getStrength() + "/" + api.getServer().getNode(Server.NodeType.FW, 0).getMaxStrength() + " | " + api.getServer().getNode(Server.NodeType.FW, 1).getStrength() + "/" + api.getServer().getNode(Server.NodeType.FW, 1).getMaxStrength() + " | " + api.getServer().getNode(Server.NodeType.FW, 2).getStrength() + "/" + api.getServer().getNode(Server.NodeType.FW, 2).getMaxStrength() + "\n" +
+                                "Antivirus: " + api.getServer().getNode(Server.NodeType.AV, 0).getStrength() + "/" + api.getServer().getNode(Server.NodeType.AV, 0).getMaxStrength() + " | " + api.getServer().getNode(Server.NodeType.AV, 1).getStrength() + "/" + api.getServer().getNode(Server.NodeType.AV, 1).getMaxStrength() + " | " + api.getServer().getNode(Server.NodeType.AV, 2).getStrength() + "/" + api.getServer().getNode(Server.NodeType.AV, 2).getMaxStrength() +
+                                "\nPackages: " + api.getServer().getPackages() + " | Server Pieces: " + api.getServer().getServerPieces() + " | Antivirus Pieces: " + api.getServer().getAntivirusPieces() + " | Firewall Pieces: " + api.getServer().getFirewallPieces());
                         break;
                     default:
                         System.out.println("Unknown command, use \"help\" to list all commands.");

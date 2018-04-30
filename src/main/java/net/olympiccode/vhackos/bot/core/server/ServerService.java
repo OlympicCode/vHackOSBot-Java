@@ -2,6 +2,7 @@ package net.olympiccode.vhackos.bot.core.server;
 
 import io.sentry.Sentry;
 import net.olympiccode.vhackos.api.entities.AppType;
+import net.olympiccode.vhackos.api.entities.impl.ServerImpl;
 import net.olympiccode.vhackos.api.server.Server;
 import net.olympiccode.vhackos.bot.core.BotService;
 import net.olympiccode.vhackos.bot.core.vHackOSBot;
@@ -45,54 +46,21 @@ public class ServerService implements BotService {
     public void runService() {
         try {
             Server server = vHackOSBot.api.getServer();
-            server.update();
+
             if (server.getPackages() > 0) {
                 Server.OpenResult result = server.openAllPacks();
                 LOG.info("Opened " + server.getPackages() + " server packages, got " + result.getServer() + " server, " + result.getAv() + " av, " + result.getFw() + " fw and " + result.getBoost() + " boosters.");
             }
-            server.update();
             if (ServerConfigValues.upgradeNodes) {
-                if (server.getServerPieces() > 9) {
-                    int times = 0;
-                    int cur = server.getServerStrength();
-                    LOG.info("Upgrading server's server...");
-                    while (server.getServerPieces() > 9 && (server.getServerStrength() < server.getServerStrengthMax())) {
-                        if (server.upgrade(Server.NODE_TYPE.SERVER, 1)) times++;
-                    }
-                    server.update();
-                    LOG.info("Upgraded server's server " + times + " times. (" + cur + "->" + server.getServerStrength() + ")");
-                }
-
-                server.update();
-                int fwNodes = (int) Arrays.stream(server.getFirewallStrength()).filter(value -> value != 0).count();
-                for (int i = 0; i < fwNodes; i++) {
-                    if (server.getFirewallPieces() > 9) {
-                        LOG.info("Upgrading server's firewall node " + (i + 1) + "...");
-                        int times = 0;
-                        int cur = server.getFirewallStrength()[i];
-                        while (server.getFirewallPieces() > 9 && (server.getFirewallStrength()[i] < server.getFirewallStrengthMax()[i])) {
-                            if (server.upgrade(Server.NODE_TYPE.FW, i + 1)) times++;
-                        }
-                        server.update();
-                        LOG.info("Upgraded server's firewall node " + (i + 1) + " " + times + " times. (" + cur + "->" + server.getFirewallStrength()[i] + ")");
-                    }
-                }
-
-
-                server.update();
-                int avNodes = (int) Arrays.stream(server.getAntivirusStrength()).filter(value -> value != 0).count();
-                for (int i = 0; i < avNodes; i++) {
-                    if (server.getAntivirusPieces() > 9) {
-                        LOG.info("Upgrading server's antivirus node " + (i + 1) + "...");
-                        int times = 0;
-                        int cur = server.getAntivirusStrength()[0];
-                        while (server.getAntivirusPieces() > 9 && (server.getAntivirusStrength()[i] < server.getAntivirusStrengthMax()[i])) {
-                            if (server.upgrade(Server.NODE_TYPE.AV, i + 1)) times++;
-                        }
-                        server.update();
-                        LOG.info("Upgraded server's antivirus node " + (i + 1) + " " + times + " times. (" + cur + "->" + server.getAntivirusStrength()[i] + ")");
-                    }
-                }
+                server.getNodes().forEach(serverNode -> {
+                   while (serverNode.getMaxStrength() > serverNode.getStrength() && has(serverNode, server) != 0) {
+                       int s = serverNode.getStrength();
+                       boolean b = false;
+                       if (has(serverNode, server) == 1) b = serverNode.upgrade(); else if (has(serverNode, server) == 2) b = serverNode.upgradeFive();
+                       ((ServerImpl) server).update();
+                       if (b) LOG.info("Upgraded " + serverNode.getType() + " node (" + s + "->" + serverNode.getStrength() + ")"); else LOG.info("Failed to upgrade " + serverNode.getType() + " node.");
+                   }
+                });
             }
 
         } catch (Exception e) {
@@ -101,6 +69,21 @@ public class ServerService implements BotService {
             e.printStackTrace();
             serverService.shutdownNow();
         }
+    }
+
+    int has(Server.ServerNode serverNode, Server server) {
+        switch (serverNode.getType()) {
+            case AV:
+                if (server.getAntivirusPieces() > 0) return (server.getAntivirusPieces() > 4) ? 2 : 1;
+                break;
+            case FW:
+                if (server.getFirewallPieces() > 0) return (server.getFirewallPieces() > 4) ? 2 : 1;
+                break;
+            case SERVER:
+                if (server.getServerPieces() > 0) return (server.getServerPieces() > 4) ? 2 : 1;
+                break;
+        }
+        return 0;
     }
 
     public class ServerServiceFactory implements ThreadFactory {

@@ -10,5 +10,11 @@ public class MiscConfigValues {
     @ConfigOption(path = "misc.enableMiner", defaultValue = "true", options={"true", "false"})
     public static boolean enableMiner;
 
+    @ConfigOption(path = "misc.enableMissions", defaultValue = "true", options={"true", "false"})
+    public static boolean enableMissions;
+
+    @ConfigOption(path = "misc.doMissionActions", defaultValue = "true", options={"true", "false"})
+    public static boolean doMissionActions;
+
 
 }
